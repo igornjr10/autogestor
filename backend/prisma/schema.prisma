@@ -1,0 +1,334 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Conexão direta usada pelas migrations. No Supabase aponte para a porta 5432
+  // (Direct connection); no Postgres local pode repetir a DATABASE_URL.
+  directUrl = env("DIRECT_URL")
+}
+
+enum Perfil {
+  ADMIN
+  VENDEDOR
+  FINANCEIRO
+  DOCUMENTAL
+}
+
+enum Combustivel {
+  FLEX
+  GASOLINA
+  DIESEL
+  ELETRICO
+  HIBRIDO
+}
+
+enum SituacaoVeiculo {
+  DISPONIVEL
+  RESERVADO
+  VENDIDO
+}
+
+enum TipoCliente {
+  COMPRADOR
+  VENDEDOR
+  AMBOS
+}
+
+enum FormaPagamento {
+  AVISTA
+  FINANCIADO
+  PERMUTA
+  MISTO
+}
+
+enum TipoLancamento {
+  ENTRADA
+  SAIDA
+}
+
+enum StatusDocumento {
+  PENDENTE
+  RECEBIDO
+  CONCLUIDO
+}
+
+enum StatusNotificacao {
+  ENVIADA
+  FALHOU
+  SIMULADA
+}
+
+enum StatusParcela {
+  PENDENTE
+  PAGO
+  ATRASADO
+}
+
+enum TipoConsulta {
+  DADOS
+  DEBITOS
+}
+
+model Filial {
+  id        String   @id @default(uuid())
+  nome      String
+  cnpj      String?
+  endereco  String?
+  telefone  String?
+  ativa     Boolean  @default(true)
+
+  usuarios    Usuario[]
+  veiculos    Veiculo[]
+  vendas      Venda[]
+  lancamentos Lancamento[]
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("filiais")
+}
+
+model Usuario {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  perfil    Perfil   @default(VENDEDOR)
+  ativo     Boolean  @default(true)
+  // ADMIN pode ter filialId nulo (acesso global a todas as filiais)
+  filial    Filial?  @relation(fields: [filialId], references: [id])
+  filialId  String?
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  vendas    Venda[]  @relation("VendedorVendas")
+  consultas ConsultaPlaca[]
+
+  @@map("usuarios")
+}
+
+model Veiculo {
+  id                 String          @id @default(uuid())
+  placa              String
+  renavam            String
+  chassi             String          @unique
+  marca              String
+  modelo             String
+  anoFabricacao      Int
+  anoModelo          Int
+  cor                String
+  combustivel        Combustivel
+  quilometragem      Int
+  dataEntrada        DateTime
+  valorCompra        Decimal         @db.Decimal(12, 2)
+  valorVendaSugerido Decimal?        @db.Decimal(12, 2)
+  situacao           SituacaoVeiculo @default(DISPONIVEL)
+  observacoes        String?
+
+  // Dados do antigo proprietário
+  propNome     String
+  propCpfCnpj  String
+  propTelefone String?
+  propEndereco String?
+
+  custos      CustoAdicional[]
+  fotos       Foto[]
+  venda       Venda?
+  lancamentos Lancamento[]
+  documentos  Documento[]
+  notificacoes Notificacao[]
+  consultas   ConsultaPlaca[]
+
+  filial    Filial?  @relation(fields: [filialId], references: [id])
+  filialId  String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([filialId])
+  @@map("veiculos")
+}
+
+model CustoAdicional {
+  id        String   @id @default(uuid())
+  veiculo   Veiculo  @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  veiculoId String
+  descricao String
+  categoria String?
+  valor     Decimal  @db.Decimal(12, 2)
+  data      DateTime @default(now())
+
+  @@map("custos_adicionais")
+}
+
+model Foto {
+  id        String  @id @default(uuid())
+  veiculo   Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  veiculoId String
+  url       String
+  legenda   String?
+  ordem     Int     @default(0)
+
+  @@map("fotos")
+}
+
+model Cliente {
+  id            String      @id @default(uuid())
+  nome          String
+  cpfCnpj       String      @unique
+  rg            String?
+  cnh           String?
+  dataNascimento DateTime?
+  telefone      String?
+  email         String?
+  endereco      String?
+  tipo          TipoCliente @default(COMPRADOR)
+  observacoes   String?
+
+  compras       Venda[]     @relation("CompradorVendas")
+  lancamentos   Lancamento[]
+  documentos    Documento[]
+
+  criadoEm      DateTime    @default(now())
+  atualizadoEm  DateTime    @updatedAt
+
+  @@map("clientes")
+}
+
+model Venda {
+  id          String         @id @default(uuid())
+
+  // Um veículo tem no máximo uma venda
+  veiculo     Veiculo        @relation(fields: [veiculoId], references: [id])
+  veiculoId   String         @unique
+
+  comprador   Cliente        @relation("CompradorVendas", fields: [compradorId], references: [id])
+  compradorId String
+
+  vendedor    Usuario        @relation("VendedorVendas", fields: [vendedorId], references: [id])
+  vendedorId  String
+
+  dataVenda      DateTime
+  valorTotal     Decimal        @db.Decimal(12, 2)
+  formaPagamento FormaPagamento
+  observacoes    String?
+
+  // Snapshot do custo total do veículo no momento da venda (para lucro estável)
+  custoTotalSnapshot Decimal    @db.Decimal(12, 2)
+
+  filial    Filial?  @relation(fields: [filialId], references: [id])
+  filialId  String?
+
+  parcelas    Parcela[]
+
+  criadoEm    DateTime       @default(now())
+  atualizadoEm DateTime      @updatedAt
+
+  @@index([filialId])
+  @@map("vendas")
+}
+
+model Parcela {
+  id            String        @id @default(uuid())
+  venda         Venda         @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+  vendaId       String
+  numero        Int
+  valor         Decimal       @db.Decimal(12, 2)
+  vencimento    DateTime
+  dataPagamento DateTime?
+  status        StatusParcela @default(PENDENTE)
+  observacoes   String?
+  criadoEm      DateTime      @default(now())
+  atualizadoEm  DateTime      @updatedAt
+
+  @@index([vencimento])
+  @@index([status])
+  @@map("parcelas")
+}
+
+model Lancamento {
+  id             String         @id @default(uuid())
+  tipo           TipoLancamento
+  valor          Decimal        @db.Decimal(12, 2)
+  data           DateTime
+  categoria      String
+  descricao      String?
+  formaPagamento String?
+
+  // Vínculos opcionais (RF-03)
+  veiculo   Veiculo? @relation(fields: [veiculoId], references: [id])
+  veiculoId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+  clienteId String?
+
+  filial    Filial?  @relation(fields: [filialId], references: [id])
+  filialId  String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@index([data])
+  @@index([filialId])
+  @@map("lancamentos")
+}
+
+model Documento {
+  id        String          @id @default(uuid())
+  tipo      String          // Ex: RG, CPF, CNH, CRV/DUT, ATPV, Contrato, Comprovante
+  status    StatusDocumento @default(PENDENTE)
+  // Arquivo (quando recebido/anexado)
+  nomeArquivo String?
+  caminho     String?
+  mimeType    String?
+  tamanho     Int?
+  observacoes String?
+
+  veiculo   Veiculo? @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+  veiculoId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  clienteId String?
+
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  @@map("documentos")
+}
+
+model Notificacao {
+  id        String            @id @default(uuid())
+  tipo      String            // Ex: ATPV, ESTOQUE_60_DIAS, DOC_PENDENTE
+  destino   String?           // telefone/identificador do destinatário
+  mensagem  String
+  status    StatusNotificacao @default(SIMULADA)
+  erro      String?
+
+  veiculo   Veiculo? @relation(fields: [veiculoId], references: [id], onDelete: SetNull)
+  veiculoId String?
+
+  criadoEm  DateTime @default(now())
+
+  @@index([criadoEm])
+  @@map("notificacoes")
+}
+
+model ConsultaPlaca {
+  id        String       @id @default(uuid())
+  placa     String
+  tipo      TipoConsulta
+  resultado Json
+  simulado  Boolean      @default(false)
+
+  veiculo   Veiculo? @relation(fields: [veiculoId], references: [id], onDelete: SetNull)
+  veiculoId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  usuarioId String?
+
+  criadoEm  DateTime @default(now())
+
+  @@index([placa])
+  @@index([criadoEm])
+  @@map("consultas_placa")
+}

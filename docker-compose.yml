@@ -1,0 +1,24 @@
+# AutoGestor — orquestração de produção (banco fica no Supabase, externo).
+# Uso: configure backend/.env e rode:  docker compose up -d --build
+services:
+  backend:
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      # Em produção, libere o CORS para o domínio do frontend
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # URL pública do backend (embutida no build do frontend)
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

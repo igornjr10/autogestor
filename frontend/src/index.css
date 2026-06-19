@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+  }
+  .btn-secondary {
+    @apply btn border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700;
+  }
+  .btn-danger {
+    @apply btn bg-red-600 text-white shadow-sm hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2;
+  }
+  .input {
+    @apply w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm transition-colors focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100;
+  }
+  .label {
+    @apply mb-1 block text-sm font-medium text-slate-600 dark:text-slate-200;
+  }
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800;
+  }
+  .field-error {
+    @apply mt-1 text-xs text-red-600;
+  }
+  .badge {
+    @apply rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .page-header {
+    @apply flex items-center justify-between mb-6;
+  }
+  .table-container {
+    @apply card overflow-x-auto p-0;
+  }
+  .kpi-card {
+    @apply relative overflow-hidden rounded-xl p-5 text-white shadow-md;
+  }
+  .kpi-card-indigo {
+    @apply kpi-card bg-gradient-to-br from-indigo-500 to-indigo-700;
+  }
+  .kpi-card-violet {
+    @apply kpi-card bg-gradient-to-br from-violet-500 to-violet-700;
+  }
+  .kpi-card-emerald {
+    @apply kpi-card bg-gradient-to-br from-emerald-500 to-emerald-700;
+  }
+  .kpi-card-blue {
+    @apply kpi-card bg-gradient-to-br from-blue-500 to-blue-700;
+  }
+  .kpi-card-amber {
+    @apply kpi-card bg-gradient-to-br from-amber-400 to-amber-600;
+  }
+  .kpi-card-rose {
+    @apply kpi-card bg-gradient-to-br from-rose-500 to-rose-700;
+  }
+  .section-title {
+    @apply flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100 border-b border-slate-100 dark:border-slate-700 pb-3 mb-4;
+  }
+}
