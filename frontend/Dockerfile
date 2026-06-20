@@ -5,7 +5,7 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 # URL da API embutida no build (ajuste para o domínio do backend em produção)
-ARG VITE_API_URL=http://localhost:3000/api
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
