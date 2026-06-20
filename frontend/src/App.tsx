@@ -15,6 +15,7 @@ import { ReportsPage } from './pages/reports/ReportsPage';
 import { FiliaisPage } from './pages/filiais/FiliaisPage';
 import { NotificacoesPage } from './pages/notificacoes/NotificacoesPage';
 import { ParcelasPage } from './pages/parcelas/ParcelasPage';
+import { BackupPage } from './pages/backup/BackupPage';
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
                 <Route path="/clientes/novo" element={<ClientForm />} />
                 <Route path="/clientes/:id" element={<ClientDetail />} />
                 <Route path="/clientes/:id/editar" element={<ClientForm />} />
+                <Route path="/backup" element={<BackupPage />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </Layout>

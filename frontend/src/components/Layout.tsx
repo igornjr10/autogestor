@@ -1,7 +1,7 @@
 import React, { ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Car, Users, Wallet, BarChart2, DollarSign, Building2,
+  LayoutDashboard, Car, Users, Wallet, BarChart2, DollarSign, Building2, HardDrive,
   LogOut, Search, Bell, HelpCircle, SlidersHorizontal, Settings, Sun, Moon, Crown, ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
@@ -67,6 +67,7 @@ export function Layout({ children }: { children: ReactNode }) {
               iconClass="text-green-400"
             />
           )}
+          {isAdmin      && <SideLink to="/backup"  label="Backup"    active={at('/backup')}    icon={HardDrive} />}
         </nav>
 
         {/* Planos */}

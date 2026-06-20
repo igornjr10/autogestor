@@ -17,6 +17,7 @@ import { FiliaisModule } from './filiais/filiais.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { ParcelasModule } from './parcelas/parcelas.module';
 import { FipeModule } from './fipe/fipe.module';
+import { BackupModule } from './backup/backup.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 
@@ -39,6 +40,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     IntegrationsModule,
     ParcelasModule,
     FipeModule,
+    BackupModule,
   ],
   providers: [
     // JWT exigido por padrão (rotas liberadas com @Public)
