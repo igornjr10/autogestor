@@ -45,7 +45,7 @@ export function Layout({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div className="px-4 pt-5 pb-4">
           <Link to="/">
-            <img src={logoImg} alt="AutoGestor" style={{ height: '44px', width: 'auto' }} />
+            <img src={logoImg} alt="AutoGestor" style={{ height: '38px', width: 'auto', maxWidth: '160px', objectFit: 'contain' }} />
           </Link>
         </div>
 
