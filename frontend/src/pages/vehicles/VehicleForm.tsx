@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Car, DollarSign, User, Image, Tag, Search, Plus, Trash2, Save, X, ChevronLeft } from 'lucide-react';
 import { createVehicle, getVehicle, updateVehicle } from '../../lib/vehicles';
-import { consultarVeiculoPorPlaca } from '../../lib/integrations';
+import { consultarFipeBeta, consultarPlacaFipeComChassi } from '../../lib/integrations';
 import { getApiError } from '../../lib/api';
 import { COMBUSTIVEIS } from '../../lib/format';
 import { useFilial } from '../../auth/FilialContext';
@@ -138,24 +138,21 @@ export function VehicleForm() {
     setAvisoConsulta('');
     setConsultando(true);
     try {
-      const dados = await consultarVeiculoPorPlaca(placa);
+      const dados = await consultarPlacaFipeComChassi(placa);
       setValue('marca', dados.marca, { shouldValidate: true });
       setValue('modelo', dados.modelo, { shouldValidate: true });
-      setValue('anoFabricacao', dados.anoFabricacao, { shouldValidate: true });
-      setValue('anoModelo', dados.anoModelo, { shouldValidate: true });
-      setValue('cor', dados.cor, { shouldValidate: true });
+      if (dados.anoFabricacao) setValue('anoFabricacao', dados.anoFabricacao, { shouldValidate: true });
+      if (dados.anoModelo) setValue('anoModelo', dados.anoModelo, { shouldValidate: true });
+      if (dados.raw?.cor) setValue('cor', dados.raw.cor, { shouldValidate: true });
       setValue('chassi', dados.chassi, { shouldValidate: true });
-      setValue('renavam', dados.renavam, { shouldValidate: true });
-      if (dados.combustivel) setValue('combustivel', dados.combustivel, { shouldValidate: true });
-      // FIPE → sugere o valor de venda
-      if (dados.valorFipe) setValue('valorVendaSugerido', dados.valorFipe, { shouldValidate: true });
-      const fipeTxt = dados.valorFipe
-        ? ` FIPE: ${dados.valorFipe.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (sugerido como venda).`
+      const combustivel = mapCombustivelApi(dados.combustivel ?? dados.raw?.combustivel);
+      if (combustivel) setValue('combustivel', combustivel, { shouldValidate: true });
+      if (dados.valor) setValue('valorVendaSugerido', dados.valor, { shouldValidate: true });
+      const fipeTxt = dados.valor
+        ? ` FIPE: ${dados.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (sugerido como venda).`
         : '';
       setAvisoConsulta(
-        (dados.simulado
-          ? `⚠️ Dados simulados${dados.aviso ? ` — ${dados.aviso}` : ''} Confira antes de salvar.`
-          : '✅ Dados reais preenchidos a partir da consulta. Confira antes de salvar.') + fipeTxt,
+        `Dados reais preenchidos pela APIBrasil. Informe o Renavam manualmente, se ele nao veio na consulta.${fipeTxt}`,
       );
     } catch (e) {
       setAvisoConsulta(getApiError(e));
@@ -164,13 +161,50 @@ export function VehicleForm() {
     }
   }
 
+  async function consultarFipeBetaPlaca() {
+    const placa = (getValues('placa') ?? '').trim();
+    if (placa.length < 7) {
+      setAvisoConsulta('Informe a placa antes de consultar.');
+      return;
+    }
+    setAvisoConsulta('');
+    setConsultando(true);
+    try {
+      const dados = await consultarFipeBeta(placa);
+      setValue('marca', dados.marca, { shouldValidate: true });
+      setValue('modelo', dados.modelo, { shouldValidate: true });
+      if (dados.anoFabricacao) setValue('anoFabricacao', dados.anoFabricacao, { shouldValidate: true });
+      if (dados.anoModelo) setValue('anoModelo', dados.anoModelo, { shouldValidate: true });
+      if (dados.veiculo?.cor) setValue('cor', dados.veiculo.cor, { shouldValidate: true });
+      if (dados.veiculo?.chassi) setValue('chassi', dados.veiculo.chassi, { shouldValidate: true });
+      const combustivel = mapCombustivelApi(dados.combustivel ?? dados.veiculo?.combustivel);
+      if (combustivel) setValue('combustivel', combustivel, { shouldValidate: true });
+      if (dados.valor) setValue('valorVendaSugerido', dados.valor, { shouldValidate: true });
+
+      const detalhes = [
+        dados.valor
+          ? `FIPE: ${dados.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+          : undefined,
+        dados.ipva?.valor
+          ? `IPVA estimado: ${dados.ipva.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+          : undefined,
+        dados.mesReferencia,
+      ].filter(Boolean).join(' | ');
+
+      setAvisoConsulta(`Fipe Beta preenchida pela APIBrasil.${detalhes ? ` ${detalhes}.` : ''}`);
+    } catch (e) {
+      setAvisoConsulta(getApiError(e));
+    } finally {
+      setConsultando(false);
+    }
+  }
   return (
     <div>
       <div className="mb-6 flex items-center gap-3">
         <button type="button" onClick={() => navigate(-1)} className="btn-secondary !p-2" title="Voltar">
           <ChevronLeft size={18} />
         </button>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-bold text-slate-100">
           {editando ? 'Editar veículo' : 'Novo veículo'}
         </h1>
       </div>
@@ -209,6 +243,15 @@ export function VehicleForm() {
               <button type="button" className="btn-secondary" onClick={consultarPlaca} disabled={consultando}>
                 <Search size={16} />
                 {consultando ? 'Consultando…' : 'Consultar placa'}
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={consultarFipeBetaPlaca}
+                disabled={consultando}
+              >
+                <DollarSign size={16} />
+                {consultando ? 'Consultando...' : 'Fipe Beta'}
               </button>
             </div>
           )}
@@ -374,6 +417,16 @@ export function VehicleForm() {
   );
 }
 
+function mapCombustivelApi(valor?: unknown): FormData['combustivel'] | undefined {
+  if (!valor) return undefined;
+  const normalized = String(valor).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  if (normalized.includes('DIESEL')) return 'DIESEL';
+  if (normalized.includes('ELETR')) return 'ELETRICO';
+  if (normalized.includes('HIBR')) return 'HIBRIDO';
+  if (normalized.includes('GASOL')) return 'GASOLINA';
+  if (normalized.includes('FLEX') || normalized.includes('ALCOOL')) return 'FLEX';
+  return undefined;
+}
 function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
     <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-3 dark:border-slate-700">
