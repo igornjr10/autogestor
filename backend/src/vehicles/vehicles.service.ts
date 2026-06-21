@@ -110,6 +110,8 @@ export class VehiclesService {
 
   async remove(id: string) {
     await this.ensureExists(id);
+    // Remove a venda vinculada primeiro (Parcelas têm cascade da Venda)
+    await this.prisma.venda.deleteMany({ where: { veiculoId: id } });
     await this.prisma.veiculo.delete({ where: { id } });
     return { removido: true };
   }

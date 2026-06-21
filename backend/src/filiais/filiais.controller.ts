@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { Perfil } from '@prisma/client';
 import { FiliaisService } from './filiais.service';
 import { CreateFilialDto, UpdateFilialDto } from './dto/filial.dto';
@@ -28,7 +28,7 @@ export class FiliaisController {
 
   @Delete(':id')
   @Roles(Perfil.ADMIN)
-  remove(@Param('id') id: string) {
-    return this.filiaisService.remove(id);
+  remove(@Param('id') id: string, @Query('force') force?: string) {
+    return this.filiaisService.remove(id, force === 'true');
   }
 }

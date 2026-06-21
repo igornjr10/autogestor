@@ -16,6 +16,6 @@ export async function updateFilial(id: string, payload: Partial<Filial>): Promis
   return data;
 }
 
-export async function deleteFilial(id: string): Promise<void> {
-  await api.delete(`/filiais/${id}`);
+export async function deleteFilial(id: string, force = false): Promise<void> {
+  await api.delete(`/filiais/${id}`, { params: force ? { force: 'true' } : undefined });
 }

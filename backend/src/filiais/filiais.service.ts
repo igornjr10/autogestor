@@ -25,14 +25,16 @@ export class FiliaisService {
     return this.prisma.filial.update({ where: { id }, data: dto });
   }
 
-  async remove(id: string) {
+  async remove(id: string, force = false) {
     await this.findOne(id);
-    const [veiculos, usuarios] = await Promise.all([
-      this.prisma.veiculo.count({ where: { filialId: id } }),
-      this.prisma.usuario.count({ where: { filialId: id } }),
-    ]);
-    if (veiculos > 0 || usuarios > 0) {
-      throw new ConflictException('Não é possível excluir uma filial com veículos ou usuários vinculados. Desative-a.');
+    if (!force) {
+      const [veiculos, usuarios] = await Promise.all([
+        this.prisma.veiculo.count({ where: { filialId: id } }),
+        this.prisma.usuario.count({ where: { filialId: id } }),
+      ]);
+      if (veiculos > 0 || usuarios > 0) {
+        throw new ConflictException('Não é possível excluir uma filial com veículos ou usuários vinculados. Desative-a ou use ?force=true para forçar.');
+      }
     }
     await this.prisma.filial.delete({ where: { id } });
     return { removido: true };

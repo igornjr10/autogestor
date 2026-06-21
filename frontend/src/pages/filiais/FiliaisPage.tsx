@@ -47,7 +47,7 @@ export function FiliaisPage() {
   });
 
   const remover = useMutation({
-    mutationFn: (id: string) => deleteFilial(id),
+    mutationFn: (id: string) => deleteFilial(id, true),
     onSuccess: invalidar,
     onError: (e) => setErro(getApiError(e)),
   });
@@ -113,7 +113,7 @@ export function FiliaisPage() {
                   <button className="mr-3 text-xs text-blue-600 hover:underline" onClick={() => alternarAtiva.mutate({ id: f.id, ativa: !f.ativa })}>
                     {f.ativa ? 'desativar' : 'ativar'}
                   </button>
-                  <button className="text-xs text-red-600 hover:underline" onClick={() => window.confirm('Excluir esta filial?') && remover.mutate(f.id)}>
+                  <button className="text-xs text-red-600 hover:underline" onClick={() => window.confirm(`Excluir "${f.nome}"? Isso removerá todos os dados vinculados.`) && remover.mutate(f.id)}>
                     excluir
                   </button>
                 </td>
