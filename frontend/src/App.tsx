@@ -16,6 +16,7 @@ import { FiliaisPage } from './pages/filiais/FiliaisPage';
 import { NotificacoesPage } from './pages/notificacoes/NotificacoesPage';
 import { ParcelasPage } from './pages/parcelas/ParcelasPage';
 import { BackupPage } from './pages/backup/BackupPage';
+import { UsersPage } from './pages/users/UsersPage';
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
                 <Route path="/clientes/:id" element={<ClientDetail />} />
                 <Route path="/clientes/:id/editar" element={<ClientForm />} />
                 <Route path="/backup" element={<BackupPage />} />
+                <Route path="/usuarios" element={<UsersPage />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </Layout>
