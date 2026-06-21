@@ -25,12 +25,11 @@ export class ApiBrasilProvider implements VehicleDataProvider, DocumentDataProvi
   private get credenciais() {
     const baseUrl = this.config.get<string>('APIBRASIL_BASE_URL');
     const bearer = this.config.get<string>('APIBRASIL_BEARER_TOKEN');
-    const device = this.config.get<string>('APIBRASIL_DEVICE_TOKEN');
-    return { baseUrl, bearer, device, configurado: !!(baseUrl && bearer && device) };
+    return { baseUrl, bearer, configurado: !!(baseUrl && bearer) };
   }
 
   async consultarVeiculo(placa: string): Promise<ConsultaVeiculoResult> {
-    const { baseUrl, bearer, device, configurado } = this.credenciais;
+    const { baseUrl, bearer, configurado } = this.credenciais;
     if (!configurado) return this.veiculoSimulado(placa);
 
     try {
@@ -38,7 +37,6 @@ export class ApiBrasilProvider implements VehicleDataProvider, DocumentDataProvi
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          DeviceToken: device!,
           Authorization: `Bearer ${bearer}`,
         },
         body: JSON.stringify({ placa }),
@@ -66,7 +64,7 @@ export class ApiBrasilProvider implements VehicleDataProvider, DocumentDataProvi
   }
 
   async consultarDebitos(placa: string): Promise<ConsultaDebitosResult> {
-    const { baseUrl, bearer, device, configurado } = this.credenciais;
+    const { baseUrl, bearer, configurado } = this.credenciais;
     if (!configurado) return this.debitosSimulado(placa);
 
     try {
@@ -74,7 +72,6 @@ export class ApiBrasilProvider implements VehicleDataProvider, DocumentDataProvi
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          DeviceToken: device!,
           Authorization: `Bearer ${bearer}`,
         },
         body: JSON.stringify({ placa }),
@@ -123,7 +120,7 @@ export class ApiBrasilProvider implements VehicleDataProvider, DocumentDataProvi
     if (!v.valido) return base; // não consulta cadastro de documento inválido
 
     // 2) Consulta cadastral (provedor real ou simulado)
-    const { baseUrl, bearer, device, configurado } = this.credenciais;
+    const { baseUrl, bearer, configurado } = this.credenciais;
     if (!configurado) return this.documentoSimulado(base);
 
     try {
@@ -132,7 +129,6 @@ export class ApiBrasilProvider implements VehicleDataProvider, DocumentDataProvi
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          DeviceToken: device!,
           Authorization: `Bearer ${bearer}`,
         },
         body: JSON.stringify({ [rota]: v.documento }),

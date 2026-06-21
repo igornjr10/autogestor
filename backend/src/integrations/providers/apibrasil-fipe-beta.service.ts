@@ -1,23 +1,53 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-export interface ApibrasilFipeChassiRequest {
-  tipo: 'fipe-chassi';
+export interface ApibrasilFipeBetaRequest {
+  tipo: 'fipe';
   placa: string;
   homolog: boolean;
 }
 
-export interface ApibrasilFipeChassiResponse {
+export interface ApibrasilFipeHistoricoItem {
+  mes: string;
+  valor: number;
+}
+
+export interface ApibrasilFipeIpva {
+  aliquota?: number;
+  uf?: string;
+  valor?: number;
+  valorFormatado?: string;
+}
+
+export interface ApibrasilFipeVeiculo {
+  chassi?: string;
+  cilindradas?: string;
+  combustivel?: string;
+  cor?: string;
+  especie?: string;
+  municipio?: string;
+  nacionalidade?: string;
+  potencia?: number;
+  quantidadeLugares?: number;
+  tipoVeiculo?: string;
+  uf?: string;
+}
+
+export interface ApibrasilFipeBetaResponse {
   placa: string;
-  chassi: string;
   marca: string;
   modelo: string;
   anoFabricacao?: number;
   anoModelo?: number;
   codigoFipe?: string;
   valor?: number;
-  valorTexto?: string;
   combustivel?: string;
+  categoria?: string;
+  mesReferencia?: string;
+  url?: string;
+  ipva?: ApibrasilFipeIpva;
+  historico: ApibrasilFipeHistoricoItem[];
+  veiculo?: ApibrasilFipeVeiculo;
   homologado?: boolean;
   fonte: 'apibrasil';
   raw: Record<string, unknown>;
@@ -31,24 +61,28 @@ interface ApibrasilErrorPayload {
   errors?: unknown;
 }
 
-interface NormalizedFipeChassiPayload {
+interface NormalizedFipePayload {
   placa?: string;
-  chassi: string;
   marca: string;
   modelo: string;
   anoFabricacao?: number;
   anoModelo?: number;
   codigoFipe?: string;
   valor?: number;
-  valorTexto?: string;
   combustivel?: string;
+  categoria?: string;
+  mesReferencia?: string;
+  url?: string;
+  ipva?: ApibrasilFipeIpva;
+  historico: ApibrasilFipeHistoricoItem[];
+  veiculo?: ApibrasilFipeVeiculo;
   homologado?: boolean;
   raw: Record<string, unknown>;
 }
 
 @Injectable()
-export class ApiBrasilFipeChassiService {
-  private readonly logger = new Logger(ApiBrasilFipeChassiService.name);
+export class ApiBrasilFipeBetaService {
+  private readonly logger = new Logger(ApiBrasilFipeBetaService.name);
 
   constructor(private readonly config: ConfigService) {}
 
@@ -64,9 +98,7 @@ export class ApiBrasilFipeChassiService {
     return Number(this.config.get<number>('APIBRASIL_REQUEST_TIMEOUT_MS', 15000));
   }
 
-  async consultarPlacaFipeComChassi(
-    payload: ApibrasilFipeChassiRequest,
-  ): Promise<ApibrasilFipeChassiResponse> {
+  async consultarFipeBeta(payload: ApibrasilFipeBetaRequest): Promise<ApibrasilFipeBetaResponse> {
     this.validateConfig();
 
     const controller = new AbortController();
@@ -97,15 +129,19 @@ export class ApiBrasilFipeChassiService {
 
       return {
         placa: data.placa ?? payload.placa.toUpperCase(),
-        chassi: data.chassi,
         marca: data.marca,
         modelo: data.modelo,
         anoFabricacao: data.anoFabricacao,
         anoModelo: data.anoModelo,
         codigoFipe: data.codigoFipe,
         valor: data.valor,
-        valorTexto: data.valorTexto,
         combustivel: data.combustivel,
+        categoria: data.categoria,
+        mesReferencia: data.mesReferencia,
+        url: data.url,
+        ipva: data.ipva,
+        historico: data.historico,
+        veiculo: data.veiculo,
         homologado: data.homologado,
         fonte: 'apibrasil',
         raw: data.raw,
@@ -116,7 +152,7 @@ export class ApiBrasilFipeChassiService {
       if (this.isAbortError(error)) {
         throw new HttpException(
           {
-            message: 'Tempo limite excedido ao consultar Placa FIPE com Chassi na API Brasil.',
+            message: 'Tempo limite excedido ao consultar Fipe Beta na API Brasil.',
             timeoutMs: this.requestTimeoutMs,
           },
           HttpStatus.GATEWAY_TIMEOUT,
@@ -124,14 +160,11 @@ export class ApiBrasilFipeChassiService {
       }
 
       const message = error instanceof Error ? error.message : 'Erro desconhecido ao consultar API Brasil';
-      this.logger.error(
-        `consultaPlacaFipeComChassi failed: ${message}`,
-        error instanceof Error ? error.stack : undefined,
-      );
+      this.logger.error(`consultarFipeBeta failed: ${message}`, error instanceof Error ? error.stack : undefined);
 
       throw new HttpException(
         {
-          message: 'Falha ao consultar Placa FIPE com Chassi na API Brasil.',
+          message: 'Falha ao consultar Fipe Beta na API Brasil.',
           error: message,
         },
         HttpStatus.BAD_GATEWAY,
@@ -150,9 +183,8 @@ export class ApiBrasilFipeChassiService {
     }
   }
 
-  private validateRequiredResponseFields(data: NormalizedFipeChassiPayload): void {
+  private validateRequiredResponseFields(data: NormalizedFipePayload): void {
     const missingFields = [
-      ['chassi', data.chassi],
       ['marca', data.marca],
       ['modelo', data.modelo],
     ]
@@ -188,23 +220,96 @@ export class ApiBrasilFipeChassiService {
     }
   }
 
-  private normalizeResponse(json: unknown): NormalizedFipeChassiPayload {
-    const payload = this.unwrapResponse(json);
+  private normalizeResponse(json: unknown): NormalizedFipePayload {
+    const root = this.isRecord(json) ? json : {};
+    const payload = this.unwrapFipeItem(root);
+    const vehicle = this.unwrapVehicle(root);
 
     return {
       placa: this.toOptionalString(payload.placa ?? payload.PLACA),
-      chassi: this.toString(payload.chassi ?? payload.CHASSI),
       marca: this.toString(payload.marca ?? payload.MARCA),
       modelo: this.toString(payload.modelo ?? payload.MODELO),
       anoFabricacao: this.toNumber(payload.anoFabricacao ?? payload.ANO_FABRICACAO ?? payload.ano),
       anoModelo: this.toNumber(payload.anoModelo ?? payload.ANO_MODELO),
       codigoFipe: this.toOptionalString(payload.codigoFipe ?? payload.CODIGO_FIPE ?? payload.codigo_fipe),
       valor: this.parseMoney(payload.valor ?? payload.VALOR ?? payload.valorFipe),
-      valorTexto: this.toOptionalString(payload.valorTexto ?? payload.VALOR_TEXTO ?? payload.valor ?? payload.VALOR),
-      combustivel: this.toOptionalString(payload.combustivel ?? payload.COMBUSTIVEL),
-      homologado: this.toBoolean(payload.homologado ?? payload.homolog ?? payload.HOMOLOG),
-      raw: payload,
+      combustivel: this.toOptionalString(payload.combustivel ?? payload.COMBUSTIVEL ?? vehicle?.combustivel),
+      categoria: this.toOptionalString(payload.categoria ?? payload.CATEGORIA),
+      mesReferencia: this.toOptionalString(payload.mesReferencia ?? payload.mes_referencia),
+      url: this.toOptionalString(payload.url),
+      ipva: this.normalizeIpva(payload.ipva),
+      historico: this.normalizeHistorico(payload.historico),
+      veiculo: vehicle,
+      homologado: this.toBoolean(root.homolog ?? payload.homologado ?? payload.homolog),
+      raw: root,
     };
+  }
+
+  private unwrapFipeItem(root: Record<string, unknown>): Record<string, unknown> {
+    const data = this.isRecord(root.data) ? root.data : root;
+    const candidates = [
+      data.data,
+      data.resultados,
+      root.resultados,
+      root.response,
+    ];
+
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) {
+        const principal = candidate.find(
+          (item): item is Record<string, unknown> => this.isRecord(item) && item.principal === true,
+        );
+        if (principal) return principal;
+
+        const first = candidate.find((item): item is Record<string, unknown> => this.isRecord(item));
+        if (first) return first;
+      }
+
+      if (this.isRecord(candidate)) return candidate;
+    }
+
+    return data;
+  }
+
+  private unwrapVehicle(root: Record<string, unknown>): ApibrasilFipeVeiculo | undefined {
+    const data = this.isRecord(root.data) ? root.data : root;
+    const vehicle = this.isRecord(data.veiculo) ? data.veiculo : this.isRecord(root.veiculo) ? root.veiculo : undefined;
+    if (!vehicle) return undefined;
+
+    return {
+      chassi: this.toOptionalString(vehicle.chassi ?? vehicle.CHASSI),
+      cilindradas: this.toOptionalString(vehicle.cilindradas),
+      combustivel: this.toOptionalString(vehicle.combustivel ?? vehicle.COMBUSTIVEL),
+      cor: this.toOptionalString(vehicle.cor ?? vehicle.COR),
+      especie: this.toOptionalString(vehicle.especie),
+      municipio: this.toOptionalString(vehicle.municipio),
+      nacionalidade: this.toOptionalString(vehicle.nacionalidade),
+      potencia: this.toNumber(vehicle.potencia),
+      quantidadeLugares: this.toNumber(vehicle.quantidade_lugares ?? vehicle.quantidadeLugares),
+      tipoVeiculo: this.toOptionalString(vehicle.tipo_veiculo ?? vehicle.tipoVeiculo),
+      uf: this.toOptionalString(vehicle.uf ?? vehicle.UF),
+    };
+  }
+
+  private normalizeIpva(value: unknown): ApibrasilFipeIpva | undefined {
+    if (!this.isRecord(value)) return undefined;
+    return {
+      aliquota: this.toNumber(value.aliquota),
+      uf: this.toOptionalString(value.uf),
+      valor: this.parseMoney(value.valor),
+      valorFormatado: this.toOptionalString(value.valor_formatado ?? value.valorFormatado),
+    };
+  }
+
+  private normalizeHistorico(value: unknown): ApibrasilFipeHistoricoItem[] {
+    if (!Array.isArray(value)) return [];
+    return value
+      .filter((item): item is Record<string, unknown> => this.isRecord(item))
+      .map((item) => ({
+        mes: this.toString(item.mes),
+        valor: this.parseMoney(item.valor) ?? 0,
+      }))
+      .filter((item) => item.mes && item.valor > 0);
   }
 
   private async throwHttpError(response: Response): Promise<never> {
@@ -230,8 +335,8 @@ export class ApiBrasilFipeChassiService {
     return {
       message: this.toOptionalString(payload.message ?? payload.erro),
       error: this.toOptionalString(payload.error ?? payload.erro),
-      code: this.normalizeErrorField(payload.code ?? payload.status),
-      status: this.normalizeErrorField(payload.status ?? payload.code),
+      code: this.normalizeErrorField(payload.code ?? payload.status_code ?? payload.status),
+      status: this.normalizeErrorField(payload.status ?? payload.status_code ?? payload.code),
       errors: payload.errors,
     };
   }
@@ -241,29 +346,6 @@ export class ApiBrasilFipeChassiService {
     const normalized = String(value).trim();
     const numeric = Number(normalized);
     return Number.isFinite(numeric) ? numeric : normalized;
-  }
-
-  private unwrapResponse(body: unknown): Record<string, unknown> {
-    if (!body || typeof body !== 'object') return {};
-
-    const candidate = body as Record<string, unknown>;
-    const payload = this.isRecord(candidate.response)
-      ? candidate.response
-      : this.isRecord(candidate.data)
-        ? candidate.data
-        : candidate;
-
-    if (Array.isArray(payload.resultados)) {
-      const principal = payload.resultados.find(
-        (item): item is Record<string, unknown> => this.isRecord(item) && item.principal === true,
-      );
-      if (principal) return principal;
-
-      const first = payload.resultados.find((item): item is Record<string, unknown> => this.isRecord(item));
-      if (first) return first;
-    }
-
-    return payload;
   }
 
   private isRecord(value: unknown): value is Record<string, unknown> {
@@ -282,8 +364,8 @@ export class ApiBrasilFipeChassiService {
 
   private toNumber(value: unknown): number | undefined {
     if (value === undefined || value === null) return undefined;
-    const cast = Number(String(value).replace(/[^0-9.-]/g, ''));
-    return Number.isFinite(cast) ? cast : undefined;
+    const parsed = Number(String(value).replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
 
   private toBoolean(value: unknown): boolean | undefined {

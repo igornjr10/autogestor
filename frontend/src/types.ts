@@ -29,6 +29,58 @@ export interface ConsultaVeiculoResult {
   aviso?: string;
 }
 
+export interface ConsultaPlacaFipeChassiResult {
+  placa: string;
+  chassi: string;
+  marca: string;
+  modelo: string;
+  anoFabricacao?: number;
+  anoModelo?: number;
+  codigoFipe?: string;
+  valor?: number;
+  valorTexto?: string;
+  combustivel?: string;
+  homologado?: boolean;
+  fonte: 'apibrasil';
+  raw: {
+    cor?: string;
+    combustivel?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface ConsultaFipeBetaResult {
+  placa: string;
+  marca: string;
+  modelo: string;
+  anoFabricacao?: number;
+  anoModelo?: number;
+  codigoFipe?: string;
+  valor?: number;
+  combustivel?: string;
+  categoria?: string;
+  mesReferencia?: string;
+  url?: string;
+  ipva?: {
+    aliquota?: number;
+    uf?: string;
+    valor?: number;
+    valorFormatado?: string;
+  };
+  historico: { mes: string; valor: number }[];
+  veiculo?: {
+    chassi?: string;
+    combustivel?: string;
+    cor?: string;
+    uf?: string;
+    tipoVeiculo?: string;
+    [key: string]: unknown;
+  };
+  homologado?: boolean;
+  fonte: 'apibrasil';
+  raw: Record<string, unknown>;
+}
+
 export interface ConsultaDebitosResult {
   placa: string;
   ipva: { ano: number; valor: number; pago: boolean };

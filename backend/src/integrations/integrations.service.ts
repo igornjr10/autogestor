@@ -3,6 +3,14 @@ import { Prisma, TipoConsulta } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { VEHICLE_DATA_PROVIDER, VehicleDataProvider } from './providers/vehicle-data.provider';
 import { DOCUMENT_DATA_PROVIDER, DocumentDataProvider } from './providers/document-data.provider';
+import {
+  ApiBrasilFipeChassiService,
+  ApibrasilFipeChassiResponse,
+} from './providers/apibrasil-fipe-chassi.service';
+import {
+  ApiBrasilFipeBetaService,
+  ApibrasilFipeBetaResponse,
+} from './providers/apibrasil-fipe-beta.service';
 import { validarDocumento } from '../common/documento.util';
 
 @Injectable()
@@ -11,14 +19,14 @@ export class IntegrationsService {
     private readonly prisma: PrismaService,
     @Inject(VEHICLE_DATA_PROVIDER) private readonly provider: VehicleDataProvider,
     @Inject(DOCUMENT_DATA_PROVIDER) private readonly docProvider: DocumentDataProvider,
+    private readonly fipeBeta: ApiBrasilFipeBetaService,
+    private readonly fipeChassi: ApiBrasilFipeChassiService,
   ) {}
 
-  /** Validação local (offline) dos dígitos do CPF/CNPJ. */
   validarDocumento(documento: string) {
     return validarDocumento(documento);
   }
 
-  /** Validação local + consulta cadastral (provedor) do CPF/CNPJ. */
   consultarDocumento(documento: string) {
     return this.docProvider.consultarDocumento(documento);
   }
@@ -35,7 +43,22 @@ export class IntegrationsService {
     return resultado;
   }
 
-  /** Histórico de consultas (auditoria). */
+  consultarPlacaFipeComChassi(placa: string, homolog = false): Promise<ApibrasilFipeChassiResponse> {
+    return this.fipeChassi.consultarPlacaFipeComChassi({
+      tipo: 'fipe-chassi',
+      placa: placa.toUpperCase(),
+      homolog,
+    });
+  }
+
+  consultarFipeBeta(placa: string, homolog = false): Promise<ApibrasilFipeBetaResponse> {
+    return this.fipeBeta.consultarFipeBeta({
+      tipo: 'fipe',
+      placa: placa.toUpperCase(),
+      homolog,
+    });
+  }
+
   historico(veiculoId?: string) {
     return this.prisma.consultaPlaca.findMany({
       where: veiculoId ? { veiculoId } : {},
