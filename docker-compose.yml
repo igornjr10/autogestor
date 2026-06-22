@@ -8,7 +8,7 @@ services:
       # Em produção, libere o CORS para o domínio do frontend
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
     ports:
-      - "3000:3000"
+      - "3002:3000"
     volumes:
       - backups:/app/backups
     restart: unless-stopped
