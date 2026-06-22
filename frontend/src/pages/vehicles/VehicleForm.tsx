@@ -10,7 +10,7 @@ import { consultarFipeBeta, consultarPlacaFipeComChassi } from '../../lib/integr
 import { getApiError } from '../../lib/api';
 import { COMBUSTIVEIS } from '../../lib/format';
 import { useFilial } from '../../auth/FilialContext';
-import { FipeCalculator } from '../../components/FipeCalculator';
+
 
 const custoSchema = z.object({
   descricao: z.string().min(2, 'Descreva o custo.'),
@@ -322,9 +322,7 @@ export function VehicleForm() {
               <input className="input" type="number" step="0.01" {...register('valorVendaSugerido')} />
             </Field>
           </div>
-          <div className="mt-4">
-            <FipeCalculator onPreco={(v) => setValue('valorVendaSugerido', v, { shouldValidate: true })} />
-          </div>
+
         </section>
 
         <section className="card">
