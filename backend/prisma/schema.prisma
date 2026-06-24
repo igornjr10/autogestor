@@ -113,7 +113,7 @@ model Usuario {
 model Veiculo {
   id                 String          @id @default(uuid())
   placa              String
-  renavam            String
+  renavam            String?
   chassi             String          @unique
   marca              String
   modelo             String
@@ -129,8 +129,8 @@ model Veiculo {
   observacoes        String?
 
   // Dados do antigo proprietário
-  propNome     String
-  propCpfCnpj  String
+  propNome     String?
+  propCpfCnpj  String?
   propTelefone String?
   propEndereco String?
 

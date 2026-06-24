@@ -25,7 +25,7 @@ const fotoSchema = z.object({
 
 const schema = z.object({
   placa: z.string().min(7, 'Placa inválida.'),
-  renavam: z.string().min(9, 'Renavam inválido.'),
+  renavam: z.string().min(9, 'Renavam inválido.').optional().or(z.literal('').transform(() => undefined)),
   chassi: z.string().min(17, 'Chassi deve ter 17 caracteres.'),
   marca: z.string().min(1, 'Informe a marca.'),
   modelo: z.string().min(1, 'Informe o modelo.'),
@@ -38,8 +38,8 @@ const schema = z.object({
   valorCompra: z.coerce.number().positive('Valor de compra deve ser positivo.'),
   valorVendaSugerido: z.coerce.number().positive().optional().or(z.literal('').transform(() => undefined)),
   observacoes: z.string().optional(),
-  propNome: z.string().min(2, 'Informe o nome do antigo proprietário.'),
-  propCpfCnpj: z.string().min(11, 'CPF/CNPJ inválido.'),
+  propNome: z.string().min(2, 'Informe o nome do antigo proprietário.').optional().or(z.literal('').transform(() => undefined)),
+  propCpfCnpj: z.string().min(11, 'CPF/CNPJ inválido.').optional().or(z.literal('').transform(() => undefined)),
   propTelefone: z.string().optional(),
   propEndereco: z.string().optional(),
   filialId: z.string().optional(),

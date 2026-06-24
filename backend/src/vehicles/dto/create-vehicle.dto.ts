@@ -24,9 +24,10 @@ export class CreateVehicleDto {
   @MinLength(7, { message: 'Placa inválida.' })
   placa: string;
 
+  @IsOptional()
   @IsString()
   @MinLength(9, { message: 'Renavam inválido.' })
-  renavam: string;
+  renavam?: string;
 
   @IsString()
   @MinLength(17, { message: 'Chassi deve ter 17 caracteres.' })
@@ -75,13 +76,15 @@ export class CreateVehicleDto {
   observacoes?: string;
 
   // Antigo proprietário
+  @IsOptional()
   @IsString()
   @MinLength(2)
-  propNome: string;
+  propNome?: string;
 
+  @IsOptional()
   @IsString()
   @MinLength(11, { message: 'CPF/CNPJ inválido.' })
-  propCpfCnpj: string;
+  propCpfCnpj?: string;
 
   @IsOptional()
   @IsString()

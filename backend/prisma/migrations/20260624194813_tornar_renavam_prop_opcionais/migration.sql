@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "veiculos" ALTER COLUMN "renavam" DROP NOT NULL,
+ALTER COLUMN "propNome" DROP NOT NULL,
+ALTER COLUMN "propCpfCnpj" DROP NOT NULL;
