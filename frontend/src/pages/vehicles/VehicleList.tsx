@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, Search, Car, Tag, ShieldCheck, DollarSign, LayoutGrid, TableProperties, SlidersHorizontal, X, Fuel, Gauge, Heart } from 'lucide-react';
-import { listVehicles, VehicleFilters } from '../../lib/vehicles';
-import { formatMoeda, formatData, SITUACAO_BADGE, SITUACAO_LABEL } from '../../lib/format';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, Search, Car, Tag, ShieldCheck, DollarSign, LayoutGrid, TableProperties, X, Fuel, Gauge, Heart, Trash2 } from 'lucide-react';
+import { listVehicles, deleteVehicle, VehicleFilters } from '../../lib/vehicles';
+import { formatMoeda, SITUACAO_LABEL } from '../../lib/format';
 import { useAuth } from '../../auth/AuthContext';
 import { useFilial } from '../../auth/FilialContext';
 import { Veiculo } from '../../types';
@@ -40,9 +40,20 @@ const COMB_LABEL: Record<string, string> = {
 };
 
 /* ── card individual de veículo ── */
-function VehicleCard({ v, podeCadastrar }: { v: Veiculo; podeCadastrar: boolean }) {
+function VehicleCard({ v, podeCadastrar, podeExcluir, onDelete }: {
+  v: Veiculo;
+  podeCadastrar: boolean;
+  podeExcluir: boolean;
+  onDelete: (id: string) => void;
+}) {
   const foto = v.fotos?.[0]?.url;
   const s = SITUACAO_STYLE[v.situacao] ?? SITUACAO_STYLE.DISPONIVEL;
+
+  function handleDelete() {
+    if (window.confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})? Esta ação não pode ser desfeita.`)) {
+      onDelete(v.id);
+    }
+  }
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/40"
@@ -65,12 +76,17 @@ function VehicleCard({ v, podeCadastrar }: { v: Veiculo; podeCadastrar: boolean 
           <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.dot }} />
           {SITUACAO_LABEL[v.situacao]}
         </span>
-        {/* Heart */}
-        <button className="absolute right-3 top-3 rounded-full p-1.5 text-slate-400 transition-colors hover:text-rose-400"
-          style={{ background: 'rgba(0,0,0,0.4)' }}
-        >
-          <Heart size={14} />
-        </button>
+        {/* Botão excluir (hover) */}
+        {podeExcluir && (
+          <button
+            onClick={handleDelete}
+            className="absolute right-3 top-3 rounded-full p-1.5 text-slate-400 opacity-0 transition-all group-hover:opacity-100 hover:text-rose-400"
+            style={{ background: 'rgba(0,0,0,0.5)' }}
+            title="Excluir veículo"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
 
       {/* Conteúdo */}
@@ -134,6 +150,7 @@ function VehicleCard({ v, podeCadastrar }: { v: Veiculo; podeCadastrar: boolean 
 export function VehicleList() {
   const { temPerfil } = useAuth();
   const { filialAtiva } = useFilial();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<VehicleFilters>({});
   const [view, setView] = useState<'cards' | 'table'>('cards');
 
@@ -142,7 +159,13 @@ export function VehicleList() {
     queryFn: () => listVehicles({ ...filters, filialId: filialAtiva }),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteVehicle(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['veiculos'] }),
+  });
+
   const podeCadastrar = temPerfil('ADMIN', 'VENDEDOR');
+  const podeExcluir   = temPerfil('ADMIN');
 
   const total       = data?.length ?? 0;
   const vendidos    = data?.filter(v => v.situacao === 'VENDIDO').length ?? 0;
@@ -302,7 +325,7 @@ export function VehicleList() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {data.map(v => <VehicleCard key={v.id} v={v} podeCadastrar={podeCadastrar} />)}
+              {data.map(v => <VehicleCard key={v.id} v={v} podeCadastrar={podeCadastrar} podeExcluir={podeExcluir} onDelete={id => deleteMutation.mutate(id)} />)}
             </div>
           )}
         </>
@@ -348,7 +371,22 @@ export function VehicleList() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <Link to={`/veiculos/${v.id}`} className="text-xs text-indigo-400 hover:text-indigo-300">Ver detalhes →</Link>
+                      <div className="flex items-center gap-3">
+                        <Link to={`/veiculos/${v.id}`} className="text-xs text-indigo-400 hover:text-indigo-300">Ver detalhes →</Link>
+                        {podeExcluir && (
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})? Esta ação não pode ser desfeita.`)) {
+                                deleteMutation.mutate(v.id);
+                              }
+                            }}
+                            className="text-slate-600 transition-colors hover:text-rose-400"
+                            title="Excluir"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
