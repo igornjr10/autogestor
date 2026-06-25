@@ -233,28 +233,26 @@ export function VehicleForm() {
 
         <section className="card">
           <SectionHeader icon={Car} label="Dados do veículo" />
-          {!editando && (
-            <div className="mb-4 flex flex-wrap items-end gap-2">
-              <div className="flex-1">
-                <Field label="Placa" error={errors.placa?.message}>
-                  <input className="input uppercase" {...register('placa')} />
-                </Field>
-              </div>
-              <button type="button" className="btn-secondary" onClick={consultarPlaca} disabled={consultando}>
-                <Search size={16} />
-                {consultando ? 'Consultando…' : 'Consultar placa'}
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={consultarFipeBetaPlaca}
-                disabled={consultando}
-              >
-                <DollarSign size={16} />
-                {consultando ? 'Consultando...' : 'Fipe Beta'}
-              </button>
+          <div className="mb-4 flex flex-wrap items-end gap-2">
+            <div className="flex-1">
+              <Field label="Placa" error={errors.placa?.message}>
+                <input className="input uppercase" {...register('placa')} />
+              </Field>
             </div>
-          )}
+            <button type="button" className="btn-secondary" onClick={consultarPlaca} disabled={consultando}>
+              <Search size={16} />
+              {consultando ? 'Consultando…' : 'Consultar placa'}
+            </button>
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={consultarFipeBetaPlaca}
+              disabled={consultando}
+            >
+              <DollarSign size={16} />
+              {consultando ? 'Consultando...' : 'Fipe Beta'}
+            </button>
+          </div>
           {avisoConsulta && (
             <p className={`mb-4 rounded-lg px-3 py-2 text-xs ${
               avisoConsulta.startsWith('⚠') || avisoConsulta.startsWith('Informe')
@@ -265,11 +263,6 @@ export function VehicleForm() {
             </p>
           )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {editando && (
-              <Field label="Placa" error={errors.placa?.message}>
-                <input className="input uppercase" {...register('placa')} />
-              </Field>
-            )}
             <Field label="Renavam" error={errors.renavam?.message}>
               <input className="input" {...register('renavam')} />
             </Field>
