@@ -76,7 +76,7 @@ export class SalesService {
     // Gatilho RF-05: notifica o antigo proprietário sobre a ATPV
     void this.notifications
       .notificarAntigoProprietarioATPV({
-        propNome: veiculo.propNome,
+        propNome: veiculo.propNome ?? '',
         propTelefone: veiculo.propTelefone,
         veiculo: `${veiculo.marca} ${veiculo.modelo} (${veiculo.placa})`,
         veiculoId: veiculo.id,

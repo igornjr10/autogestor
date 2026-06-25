@@ -100,7 +100,7 @@ export class DocumentsService {
         anoModelo: veiculo.anoModelo,
         placa: veiculo.placa,
         chassi: veiculo.chassi,
-        renavam: veiculo.renavam,
+        renavam: veiculo.renavam ?? '',
         cor: veiculo.cor,
         quilometragem: veiculo.quilometragem,
       },
