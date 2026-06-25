@@ -116,8 +116,8 @@ export function VehicleForm() {
     try {
       const payload = { ...data, dataEntrada: new Date(data.dataEntrada).toISOString() };
       if (editando) {
-        // Custos, fotos e filial não são atualizados por este endpoint
-        const { custos: _c, fotos: _f, filialId: _fil, ...rest } = payload;
+        // Custos, fotos, filial e chassi não são atualizados por este endpoint
+        const { custos: _c, fotos: _f, filialId: _fil, chassi: _ch, ...rest } = payload;
         await updateVehicle(id!, rest);
       } else {
         await createVehicle(payload);
