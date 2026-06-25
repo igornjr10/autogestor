@@ -88,7 +88,7 @@ export function VehicleForm() {
     if (veiculo) {
       reset({
         placa: veiculo.placa,
-        renavam: veiculo.renavam,
+        renavam: veiculo.renavam ?? '',
         chassi: veiculo.chassi,
         marca: veiculo.marca,
         modelo: veiculo.modelo,
@@ -101,8 +101,8 @@ export function VehicleForm() {
         valorCompra: veiculo.valorCompra,
         valorVendaSugerido: veiculo.valorVendaSugerido ?? undefined,
         observacoes: veiculo.observacoes ?? '',
-        propNome: veiculo.propNome,
-        propCpfCnpj: veiculo.propCpfCnpj,
+        propNome: veiculo.propNome ?? '',
+        propCpfCnpj: veiculo.propCpfCnpj ?? '',
         propTelefone: veiculo.propTelefone ?? '',
         propEndereco: veiculo.propEndereco ?? '',
         custos: veiculo.custos.map((c) => ({ descricao: c.descricao, categoria: c.categoria ?? '', valor: c.valor })),
