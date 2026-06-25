@@ -1,0 +1,25 @@
+name: Atualizar dados das placas
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run:
+    name: Puxar dados reais das placas via ConsultarPlaca
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: SSH → atualizar dados
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 76.13.173.194
+          username: root
+          password: ${{ secrets.SSH_PASSWORD }}
+          command_timeout: 10m
+          script: |
+            set -e
+            cd /root/autogestor
+            git pull origin master
+            echo "--- Atualizando dados das placas ---"
+            docker compose exec -T backend node /app/prisma/atualizar-dados-placas.js
+            echo "--- Concluído ---"
